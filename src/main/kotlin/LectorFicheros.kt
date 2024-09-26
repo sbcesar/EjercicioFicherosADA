@@ -40,32 +40,32 @@ class LectorFicheros(private val fileRoute: Path) {
                         datesCollection[titles[i]]?.add(dates[i])
                     }
                 }
-
-
             }
         }
         return datesCollection
     }
 
     //Crea un fichero con el minimo, el maximo y la media de cada columna
-    fun createFile(dates: Map<String,List<String>>) {
+    fun createFile(newFileRoute: Path, dates: Map<String,List<String>>) {
+
 
         //Crear archivo si no existe
-        if (Files.notExists(fileRoute)) {
-            Files.createDirectory(fileRoute.parent)
-            Files.createFile(fileRoute)
+        if (Files.notExists(newFileRoute)) {
+            Files.createDirectories(newFileRoute.parent)
+            Files.createFile(newFileRoute)
         }
 
         //Escribir en el archivo
-        val bw: BufferedWriter = Files.newBufferedWriter(fileRoute)
-        bw.use { flux ->
-            flux.write("Nombre;Minimo;Maximo;Media")
-            flux.newLine()
+        val bw: BufferedWriter = Files.newBufferedWriter(newFileRoute)
+        bw.use { bufferedWriter ->
+            bufferedWriter.write("Nombre;Minimo;Maximo;Media")
+            bufferedWriter.newLine()
 
             dates.forEach { (key, values) ->
                 if (key != "Nombre") {
                     val numbersDates =
                         values.map { it.replace(",",".") }  //Los cambio por . porque kotlin no detecta valores decimales con ,
+                            .filter { it.toDoubleOrNull() != null }          //Lo que no sea numero lo excluye
                             .map { it.toDouble() }                           //Lista de valores Double
 
                     if (numbersDates.isNotEmpty()) {
@@ -73,8 +73,8 @@ class LectorFicheros(private val fileRoute: Path) {
                         val max = numbersDates.maxOrNull() ?: 0.0
                         val avg = numbersDates.average()
 
-                        flux.write("$key;${"%.2f".format(min)};${"%.2f".format(max)};${"%.2f".format(avg)}")
-                        flux.newLine()
+                        bufferedWriter.write("$key;${"%.2f".format(min)};${"%.2f".format(max)};${"%.2f".format(avg)}")
+                        bufferedWriter.newLine()
                     }
                 }
             }
