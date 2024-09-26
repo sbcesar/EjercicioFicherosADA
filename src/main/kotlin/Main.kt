@@ -1,5 +1,16 @@
 package org.example
 
+import java.io.File
+import java.nio.file.Path
+
+
 fun main() {
-    println("Hello World!")
+
+    val root = Path.of("src")
+    val fileRoute = root.resolve("main").resolve("resources").resolve("cotizacion.csv")
+    val file = File(fileRoute.toUri())
+    val fileReader = LectorFicheros(fileRoute)
+    val datesCollection = fileReader.transform(file)
+    fileReader.createFile(datesCollection)
+
 }
