@@ -32,10 +32,8 @@ class LectorFicheros(private val fileRoute: Path) {
                         datesCollection[title] = mutableListOf()
                     }
                     isFistLine = false
-                }
-                //Resto de la informacion
-                else {
-                    val dates = line.split(",")
+                } else {
+                    val dates = line.split(";")
                     for (i in dates.indices) {
                         datesCollection[titles[i]]?.add(dates[i])
                     }
@@ -55,28 +53,30 @@ class LectorFicheros(private val fileRoute: Path) {
             Files.createFile(newFileRoute)
         }
 
+        val dataList = mutableListOf<String>()
+
+        dates.forEach { (nombre, numeros) ->
+            if (nombre != "Nombre") {
+                val numbersDates = numeros
+                    .map { it.replace(",",".") }  //Los cambio por . porque kotlin no detecta valores decimales con ,
+                    .filter { it.toDoubleOrNull() != null }        //Lo que no sea numero lo excluye
+                    .map { it.toDouble() }                         //Lista de valores Double
+
+                if (numbersDates.isNotEmpty()) {
+                    val min = numbersDates.minOrNull() ?: 0.0
+                    val max = numbersDates.maxOrNull() ?: 0.0
+                    val avg = numbersDates.average()
+                    dataList.add("$nombre;${"%.2f".format(min)};${"%.2f".format(max)};${"%.2f".format(avg)}")
+                }
+            }
+        }
+
         //Escribir en el archivo
         val bw: BufferedWriter = Files.newBufferedWriter(newFileRoute)
         bw.use { bufferedWriter ->
-            bufferedWriter.write("Nombre;Minimo;Maximo;Media")
-            bufferedWriter.newLine()
-
-            dates.forEach { (key, values) ->
-                if (key != "Nombre") {
-                    val numbersDates =
-                        values.map { it.replace(",",".") }  //Los cambio por . porque kotlin no detecta valores decimales con ,
-                            .filter { it.toDoubleOrNull() != null }          //Lo que no sea numero lo excluye
-                            .map { it.toDouble() }                           //Lista de valores Double
-
-                    if (numbersDates.isNotEmpty()) {
-                        val min = numbersDates.minOrNull() ?: 0.0
-                        val max = numbersDates.maxOrNull() ?: 0.0
-                        val avg = numbersDates.average()
-
-                        bufferedWriter.write("$key;${"%.2f".format(min)};${"%.2f".format(max)};${"%.2f".format(avg)}")
-                        bufferedWriter.newLine()
-                    }
-                }
+            dataList.forEach { line ->
+                bufferedWriter.write(line)
+                bufferedWriter.newLine()
             }
         }
     }
